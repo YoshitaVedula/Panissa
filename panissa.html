@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For You</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #fffdf8;
+      --text: #3a2e2e;
+      --text-light: #7a6a6a;
+    }
+
+    body {
+      background: var(--cream);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .flower {
+      position: absolute;
+      opacity: 0;
+      animation: floatIn 3s ease forwards, sway 6s ease-in-out infinite;
+    }
+
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.7); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes sway {
+      0%,100% { transform: rotate(-4deg) scale(1); }
+      50%     { transform: rotate(4deg) scale(1.03); }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 80px 32px 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .section {
+      width: 100%;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section p {
+      font-size: clamp(1.1rem, 2.5vw, 1.28rem);
+      line-height: 1.95;
+      font-weight: 300;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .section p.salutation {
+      font-style: italic;
+      font-size: clamp(1.25rem, 3vw, 1.5rem);
+      color: #8b5e5e;
+      margin-bottom: 36px;
+    }
+
+    #fixedHint {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      color: var(--text-light);
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #fixedHint.visible { opacity: 1; }
+
+    #fixedHint span {
+      display: inline-block;
+      animation: bounce 1.6s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(5px); }
+    }
+
+    .response-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-top: 16px;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 1s ease, transform 1s ease;
+      width: 100%;
+    }
+
+    .response-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .response-question {
+      font-style: italic;
+      font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+      color: #8b5e5e;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .choices {
+      display: flex;
+      gap: 32px;
+      margin-top: 12px;
+    }
+
+    .choice-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      transition: transform 0.2s ease;
+      user-select: none;
+    }
+
+    .choice-label:hover { transform: scale(1.07); }
+
+    .choice-label input[type="checkbox"] {
+      appearance: none;
+      width: 22px; height: 22px;
+      border: 1.5px solid currentColor;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .choice-label input[type="checkbox"]:checked { background: currentColor; }
+    .choice-label input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fffdf8;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .yes-label { color: #4a9e6a; }
+    .no-label  { color: #c0504d; }
+
+    .submit-btn {
+      margin-top: 20px;
+      padding: 12px 36px;
+      background: transparent;
+      border: 1.5px solid var(--text-light);
+      color: var(--text);
+      font-family: 'Lato', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s, transform 0.2s;
+    }
+
+    .submit-btn:hover {
+      background: var(--text);
+      color: var(--cream);
+      transform: scale(1.03);
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #c9a07a, transparent);
+      margin: 6px auto 16px;
+      opacity: 0;
+      transition: opacity 0.9s ease 0.3s;
+    }
+    .divider.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="bg-canvas" id="bgCanvas"></div>
+
+<div id="fixedHint"><span>↓</span>&nbsp; click to keep reading</div>
+
+<main id="mainContent"></main>
+
+<script>
+const paragraphs = [
+  { text: "Dear Panissa Nasalia Sánchez,", cls: "salutation" },
+  { text: "I am so unbelievably, unequivocally, unconditionally in love with you." },
+  { text: `I remember the first day we spoke and thinking "she's so cool, but she's also such a beautiful person. I think I hit the jackpot." Fast forward two and a half months and I know that I got so incredibly lucky with you.` },
+  { text: "Everybody has their flaws, and I thoroughly believe that love is acceptance of these flaws. I never thought anyone could accept me for mine, nor still love me after seeing them. Matter of fact, I never believed I would ever be this crazy about someone, but I am. The third time really is the charm." },
+  { text: "I think about you all the time, morning, noon, and night, and I suppose it doesn't make it any better that I crave you in a way that I have never craved anything before. I yearn for a future with you because that is the only one I see for myself now. I want our little house, and our mini-mes, and Happy. I want everything that we have talked about." },
+  { text: "I have never wanted anything as much as I want this, by that, I mean us, to happen." },
+  { text: "I know I've written this before, or said it, at least, but I adore you with every cell of my body. There is no part of me that looks at you and doesn't feel on fire, yet calm at the same time. I feel a multitude of emotions when I am with you, and I know that I want to feel these emotions for the rest of my life. My heart beats for you, and my lungs breathe your name (it's prettier in Hindi, take my word for it)." },
+  { text: "I do not know what I did to deserve you, and your beautiful soul and your incredible brain. I am the luckiest person alive because I get to love you." },
+  { text: "You are easily the best thing to happen to me. I love you so much that I am sometimes drowning in my feelings for you, sometimes I feel as if I am drowning you too." },
+  { text: "I know we are both confused about what we are, so, just to clarify it for the both of us..." },
+];
+
+const mainEl = document.getElementById('mainContent');
+let currentSection = 0;
+const sectionEls = [];
+
+paragraphs.forEach((p, i) => {
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  const pEl = document.createElement('p');
+  pEl.className = p.cls || '';
+  pEl.textContent = p.text;
+  sec.appendChild(pEl);
+
+  if (i < paragraphs.length - 1) {
+    const div = document.createElement('div');
+    div.className = 'divider';
+    sec.appendChild(div);
+  }
+
+  mainEl.appendChild(sec);
+  sectionEls.push(sec);
+});
+
+// Response box
+const responseBox = document.createElement('div');
+responseBox.className = 'response-box';
+responseBox.innerHTML = `
+  <p class="response-question">Will you be my girlfriend (again)?</p>
+  <div class="choices">
+    <label class="choice-label yes-label">
+      <input type="checkbox" id="chkYes" /> Yes
+    </label>
+    <label class="choice-label no-label">
+      <input type="checkbox" id="chkNo" /> No
+    </label>
+  </div>
+  <button class="submit-btn" id="submitBtn">send my answer</button>
+`;
+mainEl.appendChild(responseBox);
+
+const chkYes = document.getElementById('chkYes');
+const chkNo  = document.getElementById('chkNo');
+chkYes.addEventListener('change', () => { if (chkYes.checked) chkNo.checked = false; });
+chkNo.addEventListener('change',  () => { if (chkNo.checked)  chkYes.checked = false; });
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  if (!chkYes.checked && !chkNo.checked) { alert('Please tick Yes or No first. ♡'); return; }
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'sending…';
+  btn.disabled = true;
+  try {
+    await fetch('https://formspree.io/f/xbdwaqkw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ answer: chkYes.checked ? 'Yes' : 'No' }),
+    });
+  } catch(e) { /* silent fail */ }
+  btn.style.display = 'none';
+  if (chkYes.checked) launchCelebration();
+});
+
+const hint = document.getElementById('fixedHint');
+
+function revealSection(i) {
+  sectionEls[i].classList.add('visible');
+  const div = sectionEls[i].querySelector('.divider');
+  if (div) setTimeout(() => div.classList.add('visible'), 400);
+}
+
+function revealNext() {
+  if (currentSection >= paragraphs.length) return;
+  revealSection(currentSection);
+
+  const isLast = currentSection === paragraphs.length - 1;
+  if (isLast) {
+    hint.classList.remove('visible');
+    setTimeout(() => {
+      responseBox.classList.add('visible');
+      responseBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 900);
+  }
+
+  currentSection++;
+  setTimeout(() => {
+    sectionEls[currentSection - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    revealSection(0);
+    currentSection = 1;
+    hint.classList.add('visible');
+  }, 600);
+});
+
+document.addEventListener('click', (e) => {
+  const tag = e.target.tagName.toLowerCase();
+  if (['input','button','label'].includes(tag)) return;
+  if (currentSection < paragraphs.length) revealNext();
+});
+
+/* ── CELEBRATION ── */
+function launchCelebration() {
+  for (let i = 0; i < 60; i++) setTimeout(spawnPetal, i * 60);
+}
+
+const petalStyle = document.createElement('style');
+petalStyle.textContent = `@keyframes petalFall { to { transform: translateY(110vh) rotate(720deg); opacity:0; } }`;
+document.head.appendChild(petalStyle);
+
+function spawnPetal() {
+  const el = document.createElement('div');
+  const colors = ['#f9c6c6','#fde68a','#c6e6c6','#f9d6e8','#d4c6f9'];
+  const size = 8 + Math.random() * 10;
+  el.style.cssText = `
+    position:fixed; z-index:999; pointer-events:none;
+    width:${size}px; height:${size}px; border-radius:50% 0;
+    background:${colors[Math.floor(Math.random()*colors.length)]};
+    left:${Math.random()*100}vw; top:-20px;
+    animation: petalFall ${2 + Math.random()*2}s linear forwards;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+/* ── ANIMATED SVG FLOWERS ── */
+const canvas = document.getElementById('bgCanvas');
+
+function makeLotus(x, y, size, delay) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 100 100');
+  svg.classList.add('flower');
+  svg.style.cssText = `left:${x}%;top:${y}%;width:${size}px;height:${size}px;
+    animation-delay:${delay}s, ${delay + 0.2}s;
+    animation-duration: 3s, ${5 + Math.random()*3}s;`;
+  const hue = Math.random() > 0.5 ? '#f4a0c0' : '#e8b4d8';
+  svg.innerHTML = `
+    <g transform="translate(50,50)">
+      ${[0,45,90,135,180,225,270,315].map(a=>`
+        <ellipse rx="10" ry="22" fill="${hue}" opacity="0.7"
+          transform="rotate(${a}) translate(0,-18)"/>`).join('')}
+      <ellipse rx="8" ry="18" fill="${hue}" opacity="0.85" transform="rotate(22) translate(0,-16)"/>
+      <ellipse rx="8" ry="18" fill="${hue}" opacity="0.85" transform="rotate(67) translate(0,-16)"/>
+      <circle r="9" fill="#f9d6e8" opacity="0.95"/>
+      <circle r="5" fill="#f4a0c0"/>
+    </g>`;
+  canvas.appendChild(svg);
+}
+
+function makeSunflower(x, y, size, delay) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 100 100');
+  svg.classList.add('flower');
+  svg.style.cssText = `left:${x}%;top:${y}%;width:${size}px;height:${size}px;
+    animation-delay:${delay}s, ${delay + 0.2}s;
+    animation-duration: 3s, ${4 + Math.random()*4}s;`;
+  svg.innerHTML = `
+    <g transform="translate(50,50)">
+      ${Array.from({length:14},(_,i)=>`
+        <ellipse rx="7" ry="20" fill="#f5c842" opacity="0.8"
+          transform="rotate(${i*25.7}) translate(0,-22)"/>`).join('')}
+      <circle r="16" fill="#6b3e26"/>
+      <circle r="12" fill="#7c4a2f"/>
+      ${Array.from({length:24},(_,i)=>`
+        <circle r="1.5" fill="#c9873d" opacity="0.7"
+          cx="${9*Math.cos(i*15*Math.PI/180)}"
+          cy="${9*Math.sin(i*15*Math.PI/180)}"/>`).join('')}
+    </g>`;
+  canvas.appendChild(svg);
+}
+
+const flowerDefs = [
+  [5,8,80,0.3,'lotus'], [18,3,55,0.8,'sun'], [82,5,70,1.2,'lotus'],
+  [93,12,50,0.5,'sun'], [2,35,60,1.5,'lotus'], [95,40,65,0.9,'sun'],
+  [8,75,75,2,'lotus'], [88,70,55,1.7,'sun'], [15,92,60,2.3,'lotus'],
+  [75,90,70,1.9,'sun'], [45,2,50,2.8,'lotus'], [55,95,55,3.1,'sun'],
+  [30,6,45,3.5,'sun'], [70,4,65,0.4,'lotus'], [3,60,45,4,'sun'],
+  [97,60,50,3.7,'lotus'], [40,94,40,4.5,'sun'],
+];
+
+flowerDefs.forEach(([x, y, size, delay, type]) => {
+  if (type === 'lotus') makeLotus(x, y, size, delay);
+  else makeSunflower(x, y, size, delay);
+});
+</script>
+</body>
+</html>
